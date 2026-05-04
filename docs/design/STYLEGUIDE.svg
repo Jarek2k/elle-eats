@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2820" viewBox="0 0 1400 2820" font-family="'Inter','Helvetica Neue',sans-serif">
+  <defs>
+    <style type="text/css"><![CDATA[
+      @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Architects+Daughter&family=Caveat:wght@400;600&family=Inter:wght@300;400;500;600&display=swap');
+      .display    { font-family: 'Fraunces', 'Hoefler Text', Georgia, serif; }
+      .chalk      { font-family: 'Caveat', 'Bradley Hand', 'Snell Roundhand', cursive; }
+      .chalk-cap  { font-family: 'Architects Daughter', 'Bradley Hand', cursive; letter-spacing: 0.04em; }
+      .body       { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .caps       { letter-spacing: 0.18em; text-transform: uppercase; }
+      .num        { font-feature-settings: 'tnum'; }
+    ]]></style>
+
+    <radialGradient id="chalkboard" cx="30%" cy="25%" r="95%">
+      <stop offset="0%"   stop-color="#262C29"/>
+      <stop offset="60%"  stop-color="#1E2421"/>
+      <stop offset="100%" stop-color="#181D1B"/>
+    </radialGradient>
+
+    <radialGradient id="chalkboardSmall" cx="30%" cy="35%" r="80%">
+      <stop offset="0%"   stop-color="#262C29"/>
+      <stop offset="100%" stop-color="#1B201D"/>
+    </radialGradient>
+
+    <filter id="chalkBlur" x="-2%" y="-2%" width="104%" height="104%">
+      <feGaussianBlur stdDeviation="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Page background -->
+  <rect width="1400" height="2820" fill="#F5F1EA"/>
+
+  <!-- ============================================================= -->
+  <!-- HEADER                                                          -->
+  <!-- ============================================================= -->
+  <text x="110" y="170" class="display" font-size="118" font-weight="400" fill="#1A1B1A">elle eats</text>
+  <text x="110" y="220" class="body caps" font-size="14" fill="#6E4A2D">Style Guide · Frühling 2026</text>
+  <text x="1290" y="220" class="body" font-size="14" fill="#6E4A2D" text-anchor="end">v 1.0</text>
+
+  <line x1="110" y1="270" x2="1290" y2="270" stroke="#1A1B1A" stroke-width="1" opacity="0.25"/>
+
+  <text x="110" y="320" class="display" font-size="22" font-style="italic" font-weight="300" fill="#3A3A36">
+    Eine handgeschriebene Wochenkarte, neben einer Tasse Kaffee und einem aufgeschlagenen Kochbuch.
+  </text>
+
+  <!-- ============================================================= -->
+  <!-- 01 · FARBPALETTE                                                -->
+  <!-- ============================================================= -->
+  <text x="110" y="420" class="body caps" font-size="13" fill="#8B9D7E">01 — Farbpalette</text>
+  <text x="110" y="470" class="display" font-size="42" font-weight="400" fill="#1A1B1A">Aus der Küche entliehen</text>
+
+  <!-- Swatch helpers: 4 columns × 2 rows. Cols at x = 110, 410, 710, 1010 -->
+  <!-- Each swatch: rect 270×110, name at +140, hex at +166 -->
+
+  <!-- Row 1 — die Tafel + ihre Umgebung -->
+  <g>
+    <!-- Schiefer -->
+    <rect x="110" y="510" width="270" height="110" fill="#1E2421" rx="4"/>
+    <text x="110" y="650" class="body" font-size="16" font-weight="500" fill="#1A1B1A">Schiefer</text>
+    <text x="110" y="672" class="body num" font-size="12" fill="#6E4A2D">#1E2421 · slate · Tafel</text>
+
+    <!-- Frame -->
+    <rect x="410" y="510" width="270" height="110" fill="#0F1110" rx="4"/>
+    <text x="410" y="650" class="body" font-size="16" font-weight="500" fill="#1A1B1A">Frame</text>
+    <text x="410" y="672" class="body num" font-size="12" fill="#6E4A2D">#0F1110 · frame · Rahmen</text>
+
+    <!-- Kreide -->
+    <rect x="710" y="510" width="270" height="110" fill="#EFE8DA" stroke="#1A1B1A" stroke-opacity="0.15" rx="4"/>
+    <text x="710" y="650" class="body" font-size="16" font-weight="500" fill="#1A1B1A">Kreide</text>
+    <text x="710" y="672" class="body num" font-size="12" fill="#6E4A2D">#EFE8DA · chalk</text>
+
+    <!-- Leinen -->
+    <rect x="1010" y="510" width="270" height="110" fill="#F5F1EA" stroke="#1A1B1A" stroke-opacity="0.15" rx="4"/>
+    <text x="1010" y="650" class="body" font-size="16" font-weight="500" fill="#1A1B1A">Leinen</text>
+    <text x="1010" y="672" class="body num" font-size="12" fill="#6E4A2D">#F5F1EA · linen</text>
+  </g>
+
+  <!-- Row 2 — Text & Akzente -->
+  <g>
+    <!-- Tinte -->
+    <rect x="110" y="720" width="270" height="110" fill="#1A1B1A" rx="4"/>
+    <text x="110" y="860" class="body" font-size="16" font-weight="500" fill="#1A1B1A">Tinte</text>
+    <text x="110" y="882" class="body num" font-size="12" fill="#6E4A2D">#1A1B1A · ink · Text</text>
+
+    <!-- Eiche -->
+    <rect x="410" y="720" width="270" height="110" fill="#C9A574" rx="4"/>
+    <text x="410" y="860" class="body" font-size="16" font-weight="500" fill="#1A1B1A">Eiche</text>
+    <text x="410" y="882" class="body num" font-size="12" fill="#6E4A2D">#C9A574 · oak</text>
+
+    <!-- Walnuss -->
+    <rect x="710" y="720" width="270" height="110" fill="#6E4A2D" rx="4"/>
+    <text x="710" y="860" class="body" font-size="16" font-weight="500" fill="#1A1B1A">Walnuss</text>
+    <text x="710" y="882" class="body num" font-size="12" fill="#6E4A2D">#6E4A2D · walnut</text>
+
+    <!-- Salbei -->
+    <rect x="1010" y="720" width="270" height="110" fill="#8B9D7E" rx="4"/>
+    <text x="1010" y="860" class="body" font-size="16" font-weight="500" fill="#1A1B1A">Salbei</text>
+    <text x="1010" y="882" class="body num" font-size="12" fill="#6E4A2D">#8B9D7E · sage · „heute"</text>
+  </g>
+
+  <line x1="110" y1="940" x2="1290" y2="940" stroke="#1A1B1A" stroke-width="1" opacity="0.15"/>
+
+  <!-- ============================================================= -->
+  <!-- 02 · TYPOGRAFIE                                                 -->
+  <!-- ============================================================= -->
+  <text x="110" y="1000" class="body caps" font-size="13" fill="#8B9D7E">02 — Typografie</text>
+  <text x="110" y="1050" class="display" font-size="42" font-weight="400" fill="#1A1B1A">Drei Schriften, je eine Aufgabe</text>
+
+  <!-- Fraunces -->
+  <text x="110" y="1110" class="body caps" font-size="11" fill="#6E4A2D">Display · Fraunces · 300 / 400</text>
+  <text x="110" y="1190" class="display" font-size="78" font-weight="400" fill="#1A1B1A">Linsen mit Zitrone</text>
+  <text x="110" y="1230" class="display" font-size="22" font-style="italic" font-weight="300" fill="#3A3A36">
+    Eine warme Serif für Überschriften, Wochen-Header und Zitate.
+  </text>
+
+  <line x1="110" y1="1265" x2="1290" y2="1265" stroke="#1A1B1A" stroke-width="1" opacity="0.08"/>
+
+  <!-- Tafel-Schriften (Architects Daughter + Caveat zusammen, wie auf der echten Tafel) -->
+  <text x="110" y="1305" class="body caps" font-size="11" fill="#6E4A2D">Tafel · Architects Daughter (Caps) + Caveat (Gericht) · nur auf der Tafel</text>
+  <rect x="110" y="1325" width="1180" height="180" fill="url(#chalkboardSmall)" rx="4"/>
+  <!-- Tag-Header in Architects Daughter -->
+  <text x="160" y="1390" class="chalk-cap" font-size="38" fill="#EFE8DA" filter="url(#chalkBlur)">MITTWOCH</text>
+  <!-- Kreidelinie unter dem Wochentag -->
+  <line x1="160" y1="1402" x2="365" y2="1402" stroke="#EFE8DA" stroke-opacity="0.55" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Gericht in Caveat -->
+  <text x="160" y="1465" class="chalk" font-size="44" fill="#EFE8DA" filter="url(#chalkBlur)">gegrillte Aubergine mit Mango</text>
+
+  <line x1="110" y1="1540" x2="1290" y2="1540" stroke="#1A1B1A" stroke-width="1" opacity="0.08"/>
+
+  <!-- Inter -->
+  <text x="110" y="1580" class="body caps" font-size="11" fill="#6E4A2D">UI &amp; Body · Inter · 400 / 500 / 600</text>
+  <text x="110" y="1630" class="body" font-size="28" font-weight="400" fill="#1A1B1A">
+    Die Woche im Überblick — sieben Tage, sieben Gerichte.
+  </text>
+  <text x="110" y="1665" class="body caps" font-size="13" font-weight="600" fill="#1A1B1A">KW 18 · Mai 2026 · vorige Woche</text>
+  <text x="110" y="1695" class="body" font-size="14" fill="#1A1B1A" opacity="0.65">
+    Sekundärtext entsteht durch Opacity, nicht durch eigene Grautöne.
+  </text>
+
+  <line x1="110" y1="1740" x2="1290" y2="1740" stroke="#1A1B1A" stroke-width="1" opacity="0.15"/>
+
+  <!-- ============================================================= -->
+  <!-- 03 · DIE TAFEL                                                  -->
+  <!-- ============================================================= -->
+  <text x="110" y="1800" class="body caps" font-size="13" fill="#8B9D7E">03 — Die Tafel</text>
+  <text x="110" y="1850" class="display" font-size="42" font-weight="400" fill="#1A1B1A">Das Herz der Seite</text>
+  <text x="110" y="1882" class="display" font-size="20" font-style="italic" font-weight="300" fill="#3A3A36">
+    Bildet die echte Tafel an der Küchentür ab — Format, Rahmen, Schrift, Stille.
+  </text>
+
+  <!-- ===== LEFT COLUMN — Beschreibung ===== -->
+  <g>
+    <text x="110" y="1955" class="body caps" font-size="11" fill="#6E4A2D">Aufbau</text>
+    <text x="110" y="1985" class="body" font-size="14" fill="#1A1B1A" opacity="0.85">
+      <tspan x="110">Hochformat-Karte (Verhältnis 2 : 3) mit schwerem,</tspan>
+      <tspan x="110" dy="20">schwarzem Holzrahmen, ca. 28 px breit. Tafel-Ober-</tspan>
+      <tspan x="110" dy="20">fläche `#1E2421` mit ganz leichtem Lichtreflex aus</tspan>
+      <tspan x="110" dy="20">der oberen linken Ecke — wie das Küchenfenster.</tspan>
+    </text>
+
+    <text x="110" y="2105" class="body caps" font-size="11" fill="#6E4A2D">Layout pro Tag</text>
+    <text x="110" y="2135" class="body" font-size="14" fill="#1A1B1A" opacity="0.85">
+      <tspan x="110">Zwei Zeilen, untereinander — wie auf der echten Tafel:</tspan>
+      <tspan x="110" dy="20">Wochentag voll ausgeschrieben in Caps (Architects</tspan>
+      <tspan x="110" dy="20">Daughter), darunter eine handgezogene Kreidelinie,</tspan>
+      <tspan x="110" dy="20">darunter das Gericht in lockerer Schrift (Caveat).</tspan>
+    </text>
+
+    <text x="110" y="2255" class="body caps" font-size="11" fill="#6E4A2D">Reihenfolge der Tage</text>
+    <text x="110" y="2285" class="body" font-size="14" fill="#1A1B1A" opacity="0.85">
+      <tspan x="110">Beginnt bei „heute" und läuft chronologisch weiter.</tspan>
+      <tspan x="110" dy="20">Leere Tage zeigen den Wochentag und die Linie,</tspan>
+      <tspan x="110" dy="20">aber keinen Platzhalter — wie ein noch ungeschrie-</tspan>
+      <tspan x="110" dy="20">bener Tag auf der echten Tafel.</tspan>
+    </text>
+
+    <text x="110" y="2405" class="body caps" font-size="11" fill="#6E4A2D">„Heute"</text>
+    <text x="110" y="2435" class="body" font-size="14" fill="#1A1B1A" opacity="0.85">
+      <tspan x="110">Kleiner Salbei-Punkt links neben dem aktuellen</tspan>
+      <tspan x="110" dy="20">Wochentag-Header. Einzige Akzentfarbe auf der Tafel.</tspan>
+    </text>
+  </g>
+
+  <!-- ===== RIGHT COLUMN — Portrait Tafel-Mockup ===== -->
+  <g>
+    <!-- Drop shadow under tafel -->
+    <rect x="820" y="1912" width="470" height="720" fill="#0F1110" opacity="0.18" rx="4"/>
+    <!-- Outer frame (black wood) -->
+    <rect x="820" y="1900" width="470" height="720" fill="#0F1110" rx="4"/>
+    <!-- Inner highlight along frame top edge -->
+    <rect x="822" y="1902" width="466" height="716" fill="none" stroke="#EFE8DA" stroke-opacity="0.05" stroke-width="1" rx="3"/>
+    <!-- Chalk surface (inset 28px) -->
+    <rect x="848" y="1928" width="414" height="664" fill="url(#chalkboard)" rx="2"/>
+    <!-- Soft inner shadow on chalk surface -->
+    <rect x="849" y="1929" width="412" height="662" fill="none" stroke="#0F1110" stroke-opacity="0.4" stroke-width="1" rx="2"/>
+
+    <!-- Day blocks. Chalk surface: x=848-1262, y=1928-2592. Padding 30px → content x=878-1232, y=1958-2562 -->
+    <!-- Block height plan: header(22pt) + 8gap + line + 14gap + dish(26pt) + 32 spacing = ~94px -->
+
+    <!-- Block 1 — MITTWOCH (heute) -->
+    <circle cx="868" cy="1972" r="5" fill="#8B9D7E"/>
+    <text x="884" y="1980" class="chalk-cap" font-size="22" fill="#EFE8DA" filter="url(#chalkBlur)">MITTWOCH</text>
+    <line x1="884" y1="1992" x2="1010" y2="1992" stroke="#EFE8DA" stroke-opacity="0.55" stroke-width="1.5" stroke-linecap="round"/>
+    <text x="884" y="2026" class="chalk" font-size="28" fill="#EFE8DA" filter="url(#chalkBlur)">gegrillte Aubergine mit Mango</text>
+
+    <!-- Block 2 — DONNERSTAG -->
+    <text x="884" y="2074" class="chalk-cap" font-size="22" fill="#EFE8DA" filter="url(#chalkBlur)">DONNERSTAG</text>
+    <line x1="884" y1="2086" x2="1042" y2="2086" stroke="#EFE8DA" stroke-opacity="0.55" stroke-width="1.5" stroke-linecap="round"/>
+    <text x="884" y="2120" class="chalk" font-size="28" fill="#EFE8DA" filter="url(#chalkBlur)">Ofenhalloumi mit Fenchel</text>
+
+    <!-- Block 3 — FREITAG -->
+    <text x="884" y="2168" class="chalk-cap" font-size="22" fill="#EFE8DA" filter="url(#chalkBlur)">FREITAG</text>
+    <line x1="884" y1="2180" x2="985" y2="2180" stroke="#EFE8DA" stroke-opacity="0.55" stroke-width="1.5" stroke-linecap="round"/>
+    <text x="884" y="2214" class="chalk" font-size="28" fill="#EFE8DA" filter="url(#chalkBlur)">Edamame-Tacos</text>
+
+    <!-- Block 4 — SAMSTAG -->
+    <text x="884" y="2262" class="chalk-cap" font-size="22" fill="#EFE8DA" filter="url(#chalkBlur)">SAMSTAG</text>
+    <line x1="884" y1="2274" x2="998" y2="2274" stroke="#EFE8DA" stroke-opacity="0.55" stroke-width="1.5" stroke-linecap="round"/>
+    <text x="884" y="2308" class="chalk" font-size="28" fill="#EFE8DA" filter="url(#chalkBlur)">Chili-Aubergine mit Reissalat</text>
+
+    <!-- Block 5 — SONNTAG (leer) -->
+    <text x="884" y="2356" class="chalk-cap" font-size="22" fill="#EFE8DA" filter="url(#chalkBlur)">SONNTAG</text>
+    <line x1="884" y1="2368" x2="998" y2="2368" stroke="#EFE8DA" stroke-opacity="0.55" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- Block 6 — MONTAG (leer) -->
+    <text x="884" y="2450" class="chalk-cap" font-size="22" fill="#EFE8DA" filter="url(#chalkBlur)">MONTAG</text>
+    <line x1="884" y1="2462" x2="990" y2="2462" stroke="#EFE8DA" stroke-opacity="0.55" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- Caption under tafel -->
+    <text x="1055" y="2670" class="body" font-size="12" fill="#6E4A2D" text-anchor="middle" opacity="0.7">
+      <tspan x="1055">Tafel · 480 × 720 · Hochformat 2 : 3</tspan>
+      <tspan x="1055" dy="18">Inhalte aus dem Originalfoto übernommen</tspan>
+    </text>
+  </g>
+
+  <!-- ============================================================= -->
+  <!-- 04 · KOMPONENTEN & PRINZIPIEN                                   -->
+  <!-- ============================================================= -->
+  <line x1="110" y1="2700" x2="1290" y2="2700" stroke="#1A1B1A" stroke-width="1" opacity="0.15"/>
+
+  <text x="110" y="2740" class="body caps" font-size="13" fill="#8B9D7E">04 — Komponenten &amp; Prinzipien</text>
+
+  <!-- Buttons -->
+  <g transform="translate(110, 2760)">
+    <!-- Primary -->
+    <rect x="0" y="0" width="170" height="44" fill="#1A1B1A" rx="4"/>
+    <text x="85" y="29" class="body" font-size="14" font-weight="500" fill="#EFE8DA" text-anchor="middle">Woche speichern</text>
+
+    <!-- Secondary -->
+    <rect x="186" y="0" width="170" height="44" fill="none" stroke="#1A1B1A" stroke-width="1" rx="4"/>
+    <text x="271" y="29" class="body" font-size="14" font-weight="500" fill="#1A1B1A" text-anchor="middle">Verwerfen</text>
+
+    <!-- Tertiary -->
+    <text x="402" y="29" class="body" font-size="14" font-weight="500" fill="#1A1B1A" text-decoration="underline">‹ vorige Woche</text>
+  </g>
+
+  <!-- Principles list (right side) -->
+  <g class="body" font-size="13" fill="#1A1B1A">
+    <text x="700" y="2768" font-weight="600" class="caps" font-size="11" fill="#6E4A2D">Stilprinzipien</text>
+    <text x="700" y="2792">· Außerhalb der Tafel max. zwei Schriften.</text>
+    <text x="996" y="2792">· Maximal eine Akzentfarbe sichtbar.</text>
+    <text x="700" y="2810">· Architects Daughter + Caveat nur auf der Tafel.</text>
+    <text x="996" y="2810">· Spacing aus der 4er-Skala.</text>
+  </g>
+</svg>

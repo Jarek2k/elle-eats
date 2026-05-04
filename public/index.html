@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F5F1EA">
+  <title>elle eats — Wochenkarte</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Architects+Daughter&family=Caveat:wght@400;600&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="page-header">
+    <h1 class="brand">elle eats</h1>
+    <p class="tagline">Wochenkarte</p>
+  </header>
+
+  <nav class="section-nav" aria-label="Bereich">
+    <a href="#/" class="section-link" data-section="board">Wochenkarte</a>
+    <a href="#/rezepte" class="section-link" data-section="recipes">Rezepte</a>
+  </nav>
+
+  <main class="app">
+    <section class="view view-board hidden" data-view="board">
+      <nav class="week-nav" aria-label="Woche wählen">
+        <button class="nav-arrow" data-nav="prev" aria-label="vorige Woche">&lsaquo;</button>
+        <span class="week-label" id="weekLabel"></span>
+        <button class="nav-arrow" data-nav="next" aria-label="nächste Woche">&rsaquo;</button>
+      </nav>
+
+      <article class="canvas">
+        <article class="chalkboard" aria-label="Wochenplan">
+          <div class="chalk-surface">
+            <ol class="days" id="days"></ol>
+          </div>
+        </article>
+
+        <div class="below-board">
+          <button class="btn-tertiary hidden" id="todayBtn">‹ zur aktuellen Woche</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="view view-recipes hidden" data-view="recipes">
+      <div class="recipes-toolbar">
+        <input
+          type="search"
+          class="recipe-search"
+          id="recipeSearch"
+          placeholder="Rezept suchen…"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <button type="button" class="btn-primary recipe-new" id="recipeNewBtn">+ Neu</button>
+      </div>
+      <ul class="recipe-list" id="recipeList"></ul>
+    </section>
+
+    <section class="view view-recipe hidden" data-view="recipe">
+      <a href="#/rezepte" class="back-link">‹ Rezepte</a>
+
+      <textarea
+        class="recipe-title"
+        id="recipeTitle"
+        placeholder="Titel"
+        rows="1"
+        autocomplete="off"
+        spellcheck="false"
+      ></textarea>
+
+      <section class="field recipe-images-field">
+        <span class="field-label">Bilder</span>
+        <ul class="image-gallery" id="recipeImages"></ul>
+        <input type="file" id="recipeImageFile" accept="image/*" multiple hidden>
+        <input type="file" id="recipeImageCamera" accept="image/*" capture="environment" hidden>
+      </section>
+
+      <label class="field">
+        <span class="field-label">Zutaten</span>
+        <textarea class="field-input" id="recipeIngredients" rows="6" placeholder="je Zutat eine Zeile"></textarea>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Zubereitung</span>
+        <textarea class="field-input" id="recipeSteps" rows="8" placeholder="Schritt für Schritt"></textarea>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Notizen</span>
+        <textarea class="field-input" id="recipeNotes" rows="3" placeholder="optional"></textarea>
+      </label>
+
+      <div class="recipe-actions">
+        <button type="button" class="btn-tertiary danger" id="recipeDeleteBtn">Rezept löschen</button>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="sheet" id="dishSheet" aria-label="Gericht eintragen">
+    <form class="sheet-form" id="sheetForm" novalidate>
+      <header class="sheet-header">
+        <span class="sheet-day" id="sheetDay"></span>
+        <button type="button" class="sheet-close" id="sheetClose" aria-label="Schließen">&times;</button>
+      </header>
+
+      <div class="sheet-input-wrap">
+        <input
+          type="text"
+          class="dish-input"
+          id="dishInput"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+          placeholder="Gericht aufschreiben…"
+          enterkeyhint="done"
+        >
+      </div>
+
+      <div class="dish-action" id="dishAction"></div>
+
+      <section class="suggestions">
+        <h3 class="suggestions-title">Vorschläge</h3>
+        <ul class="suggestion-list" id="suggestionList"></ul>
+      </section>
+
+      <footer class="sheet-actions">
+        <button type="button" class="btn-tertiary danger hidden" id="deleteBtn">Löschen</button>
+        <button type="submit" class="btn-primary" id="saveBtn">Speichern</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog class="lightbox" id="imageLightbox" aria-label="Bild ansehen">
+    <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Schließen">&times;</button>
+    <img id="lightboxImage" alt="">
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

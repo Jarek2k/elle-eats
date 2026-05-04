@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Stale chat output
+ausgabe
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+
+# Claude lokal
+.claude/
+
+# Node (falls später npm/bun dazukommt)
+node_modules/
