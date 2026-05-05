@@ -513,11 +513,19 @@ const Auth = {
       return;
     }
     el.hidden = false;
+    const icon = `
+      <svg class="auth-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <circle cx="12" cy="9" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M5.5 19.2c1.4-3 4-4.4 6.5-4.4s5.1 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>`;
     if (Storage.isLoggedIn()) {
-      el.innerHTML = `<button type="button" class="auth-link" id="logoutBtn" title="${escapeHtml(Storage.email)}">Abmelden</button>`;
+      el.innerHTML = `
+        <button type="button" class="auth-btn is-active" id="logoutBtn" aria-label="Abmelden" title="Abmelden (${escapeHtml(Storage.email)})">
+          ${icon}<span class="auth-dot" aria-hidden="true"></span>
+        </button>`;
       document.getElementById('logoutBtn').addEventListener('click', () => Auth.logout());
     } else {
-      el.innerHTML = `<a href="/auth/google" class="auth-link">Anmelden</a>`;
+      el.innerHTML = `<a href="/auth/google" class="auth-btn" aria-label="Anmelden" title="Anmelden">${icon}</a>`;
     }
   },
 

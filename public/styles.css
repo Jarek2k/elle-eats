@@ -173,29 +173,55 @@ body[data-section="recipe"]  .section-link[data-section="recipes"] {
   color: var(--c-ink);
   font-weight: 600;
 }
-.auth-status {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-}
-.auth-status[hidden] { display: none; }
-.auth-link {
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--c-walnut);
-  text-decoration: none;
-  padding: var(--s-1) var(--s-2);
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-  transition: color var(--transition);
-}
-.auth-link:hover { color: var(--c-ink); }
 @media (min-width: 720px) {
   .section-nav { gap: var(--s-5); margin-bottom: var(--s-4); }
-  .section-link, .auth-link { font-size: 12px; }
+  .section-link { font-size: 12px; }
+}
+
+/* ==============================================================
+ * AUTH-CORNER (kleines Login-Icon oben rechts)
+ * ============================================================== */
+.auth-corner {
+  position: absolute;
+  top: max(var(--s-3), env(safe-area-inset-top, 0));
+  right: max(var(--s-3), env(safe-area-inset-right, 0));
+  z-index: 10;
+}
+.auth-corner[hidden] { display: none; }
+.auth-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--c-walnut);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+  opacity: 0.65;
+  transition: opacity var(--transition), color var(--transition);
+}
+.auth-btn:hover { opacity: 1; color: var(--c-ink); }
+.auth-icon { display: block; }
+.auth-dot {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c-sage);
+  box-shadow: 0 0 0 2px var(--c-linen);
+}
+@media (min-width: 720px) {
+  .auth-corner {
+    top: max(var(--s-4), env(safe-area-inset-top, 0));
+    right: max(var(--s-5), env(safe-area-inset-right, 0));
+  }
 }
 
 /* Read-only-Modus: alles, was Editieren erlaubt, ausblenden. */
