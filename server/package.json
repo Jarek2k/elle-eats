@@ -1,0 +1,21 @@
+{
+  "name": "elle-eats-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file=.env src/index.js",
+    "start": "node --env-file=.env src/index.js",
+    "seed": "node --env-file=.env src/seed.js",
+    "db:reset": "rm -rf data && node --env-file=.env src/seed.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "arctic": "^2.3.4",
+    "better-sqlite3": "^11.7.0",
+    "hono": "^4.6.13"
+  }
+}
