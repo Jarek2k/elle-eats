@@ -590,6 +590,12 @@ const Recipes = {
       el.addEventListener('input', () => this.scheduleSave());
     }
 
+    for (const id of ['recipeIngredients', 'recipeSteps', 'recipeNotes']) {
+      const el = document.getElementById(id);
+      el.addEventListener('input', () => this.autosize(el));
+    }
+    window.addEventListener('resize', () => this.autosizeAll());
+
     const titleEl = document.getElementById('recipeTitle');
     titleEl.addEventListener('input', () => this.fitTitleSize());
     titleEl.addEventListener('keydown', (e) => {
@@ -677,7 +683,10 @@ const Recipes = {
     }
 
     this.renderImages(recipe);
-    requestAnimationFrame(() => this.fitTitleSize());
+    requestAnimationFrame(() => {
+      this.fitTitleSize();
+      this.autosizeAll();
+    });
 
     const back = document.querySelector('.view-recipe .back-link');
     if (this.origin === 'board') {
@@ -724,6 +733,18 @@ const Recipes = {
     el.style.whiteSpace = fits ? 'nowrap' : 'normal';
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
+  },
+
+  autosize(el) {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  },
+
+  autosizeAll() {
+    for (const id of ['recipeIngredients', 'recipeSteps', 'recipeNotes']) {
+      this.autosize(document.getElementById(id));
+    }
   },
 
   scheduleSave() {

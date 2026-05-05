@@ -772,8 +772,9 @@ dialog.sheet::backdrop {
   font-family: var(--f-body);
   border-radius: var(--radius);
   outline: none;
-  resize: vertical;
-  min-height: 80px;
+  resize: none;
+  overflow: hidden;
+  min-height: 60px;
   transition: border-color var(--transition);
   -webkit-appearance: none;
   appearance: none;
