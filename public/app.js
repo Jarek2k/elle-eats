@@ -1,8 +1,9 @@
 'use strict';
 
 /* =============================================================
- *  Storage — kapselt die Persistenz, damit später ein Backend
- *  dahinter geschoben werden kann (siehe CLAUDE.md).
+ *  Storage — dual-mode: API (Server) oder Demo (localStorage).
+ *  Modus wird beim Start ermittelt: /healthz erreichbar => api.
+ *  loadWeek/saveRecipe/etc. sind in beiden Modi async.
  * ============================================================= */
 const STORAGE_KEY = 'elle-eats:v1';
 
@@ -10,7 +11,68 @@ function slugify(title) {
   return (title || '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+function imageSrc(s) {
+  if (!s) return '';
+  if (s.startsWith('data:') || s.startsWith('assets/') || s.startsWith('/')) return s;
+  return '/images/' + s;
+}
+
+async function apiGet(path) {
+  const res = await fetch(path, { credentials: 'same-origin' });
+  if (!res.ok) {
+    const err = new Error('http ' + res.status);
+    err.status = res.status;
+    throw err;
+  }
+  return res.json();
+}
+
+async function apiSend(method, path, body, asForm = false) {
+  const opts = { method, credentials: 'same-origin' };
+  if (asForm) {
+    opts.body = body;
+  } else if (body !== undefined) {
+    opts.headers = { 'Content-Type': 'application/json' };
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(path, opts);
+  if (!res.ok) {
+    const err = new Error('http ' + res.status);
+    err.status = res.status;
+    try { err.body = await res.json(); } catch { err.body = null; }
+    throw err;
+  }
+  if (res.status === 204) return null;
+  return res.json().catch(() => null);
+}
+
 const Storage = {
+  mode: 'demo',
+  email: null,
+  serverAvailable: false,
+
+  async init() {
+    try {
+      const res = await fetch('/healthz', { cache: 'no-store' });
+      if (res.ok) {
+        this.mode = 'api';
+        this.serverAvailable = true;
+      }
+    } catch { /* offline / kein Server -> demo */ }
+
+    if (this.mode === 'api') {
+      try {
+        const me = await apiGet('/api/me');
+        this.email = me?.email || null;
+      } catch { this.email = null; }
+    }
+  },
+
+  isApi()      { return this.mode === 'api'; },
+  isLoggedIn() { return this.email !== null; },
+  canEdit()    { return this.mode === 'demo' || this.isLoggedIn(); },
+
+  /* ---- localStorage-Helfer (Demo) ---- */
   _load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -28,6 +90,7 @@ const Storage = {
   },
 
   migrateImagePaths() {
+    if (this.isApi()) return;
     const data = this._load();
     let changed = false;
     const rewrite = (src) => {
@@ -50,17 +113,23 @@ const Storage = {
     if (changed) this._save(data);
   },
 
-  loadWeek(weekKey) {
+  /* ---- Wochen ---- */
+  async loadWeek(weekKey) {
+    if (this.isApi()) {
+      try { return await apiGet('/api/weeks/' + encodeURIComponent(weekKey)); }
+      catch { return {}; }
+    }
     return { ...(this._load().weeks[weekKey] || {}) };
   },
 
-  saveWeek(weekKey, dayMap) {
-    const data = this._load();
-    data.weeks[weekKey] = dayMap;
-    this._save(data);
-  },
-
-  setDish(weekKey, isoDate, name) {
+  async setDish(weekKey, isoDate, name) {
+    if (this.isApi()) {
+      const trimmed = (name || '').trim();
+      const url = '/api/weeks/' + encodeURIComponent(weekKey) + '/' + encodeURIComponent(isoDate);
+      if (trimmed) await apiSend('PUT', url, { name: trimmed });
+      else await apiSend('DELETE', url);
+      return;
+    }
     const data = this._load();
     if (!data.weeks[weekKey]) data.weeks[weekKey] = {};
     const trimmed = (name || '').trim();
@@ -73,35 +142,60 @@ const Storage = {
     this._save(data);
   },
 
-  removeDish(weekKey, isoDate) {
-    this.setDish(weekKey, isoDate, '');
+  async removeDish(weekKey, isoDate) {
+    return this.setDish(weekKey, isoDate, '');
   },
 
-  listWeeks() {
-    return Object.keys(this._load().weeks).sort();
+  async saveWeek(weekKey, dayMap) {
+    if (this.isApi()) {
+      for (const [iso, name] of Object.entries(dayMap)) {
+        await this.setDish(weekKey, iso, name);
+      }
+      return;
+    }
+    const data = this._load();
+    data.weeks[weekKey] = dayMap;
+    this._save(data);
   },
 
   /* ---- Rezepte ---- */
-  loadRecipes() {
+  async loadRecipes() {
+    if (this.isApi()) {
+      try { return await apiGet('/api/recipes'); }
+      catch { return {}; }
+    }
     return { ...this._load().recipes };
   },
 
-  getRecipe(slug) {
+  async getRecipe(slug) {
     if (!slug) return null;
+    if (this.isApi()) {
+      try { return await apiGet('/api/recipes/' + encodeURIComponent(slug)); }
+      catch { return null; }
+    }
     const r = this._load().recipes[slug];
     return r ? { slug, ...r } : null;
   },
 
-  findRecipeByTitle(title) {
+  async findRecipeByTitle(title) {
     return this.getRecipe(slugify(title));
   },
 
-  /**
-   * Speichert Rezept. Bei Umbenennung wird der Slug neu gebildet
-   * und alle Wochen-Einträge mit altem Titel werden auf den neuen
-   * kanonisch umgeschrieben. Liefert { slug } oder { error }.
-   */
-  saveRecipe(prevSlug, recipe) {
+  async saveRecipe(prevSlug, recipe) {
+    if (this.isApi()) {
+      try {
+        if (prevSlug) {
+          return await apiSend('PUT', '/api/recipes/' + encodeURIComponent(prevSlug), recipe);
+        }
+        return await apiSend('POST', '/api/recipes', recipe);
+      } catch (err) {
+        if (err.status === 409) return { error: 'collision' };
+        if (err.status === 400) return { error: 'empty-title' };
+        if (err.status === 401) return { error: 'auth' };
+        throw err;
+      }
+    }
+    /* --- demo --- */
     const data = this._load();
     const newTitle = (recipe.title || '').trim();
     if (!newTitle) return { error: 'empty-title' };
@@ -138,7 +232,12 @@ const Storage = {
     return { slug: newSlug };
   },
 
-  deleteRecipe(slug) {
+  async deleteRecipe(slug) {
+    if (this.isApi()) {
+      try { await apiSend('DELETE', '/api/recipes/' + encodeURIComponent(slug)); }
+      catch { /* swallow */ }
+      return;
+    }
     const data = this._load();
     if (data.recipes[slug]) {
       delete data.recipes[slug];
@@ -146,7 +245,27 @@ const Storage = {
     }
   },
 
-  addRecipeImage(slug, dataUrl) {
+  /* ---- Bilder ---- */
+  async addRecipeImage(slug, blobOrDataUrl) {
+    if (this.isApi()) {
+      const blob = blobOrDataUrl instanceof Blob
+        ? blobOrDataUrl
+        : await dataUrlToBlob(blobOrDataUrl);
+      const form = new FormData();
+      form.append('image', blob, 'image.jpg');
+      try {
+        await apiSend('POST', '/api/recipes/' + encodeURIComponent(slug) + '/images', form, true);
+        return { ok: true };
+      } catch (err) {
+        if (err.status === 401) return { error: 'auth' };
+        if (err.status === 404) return { error: 'not-found' };
+        return { error: 'upload' };
+      }
+    }
+    /* --- demo --- */
+    const dataUrl = blobOrDataUrl instanceof Blob
+      ? await blobToDataUrl(blobOrDataUrl)
+      : blobOrDataUrl;
     const data = this._load();
     const r = data.recipes[slug];
     if (!r) return { error: 'not-found' };
@@ -156,13 +275,18 @@ const Storage = {
     try {
       this._save(data);
       return { ok: true };
-    } catch (err) {
+    } catch {
       r.images.pop();
       return { error: 'quota' };
     }
   },
 
-  removeRecipeImage(slug, index) {
+  async removeRecipeImage(slug, index) {
+    if (this.isApi()) {
+      try { await apiSend('DELETE', '/api/recipes/' + encodeURIComponent(slug) + '/images/' + index); }
+      catch { /* swallow */ }
+      return;
+    }
     const data = this._load();
     const r = data.recipes[slug];
     if (!r || !Array.isArray(r.images)) return;
@@ -171,7 +295,13 @@ const Storage = {
     this._save(data);
   },
 
-  recipeUsageCount(slug) {
+  async recipeUsageCount(slug) {
+    if (this.isApi()) {
+      try {
+        const data = await apiGet('/api/recipes/' + encodeURIComponent(slug) + '/usage');
+        return data.count || 0;
+      } catch { return 0; }
+    }
     const data = this._load();
     let n = 0;
     for (const wk of Object.values(data.weeks)) {
@@ -182,11 +312,12 @@ const Storage = {
     return n;
   },
 
-  /**
-   * Vorschläge fürs Sheet: Rezepte + alte Freitext-Einträge,
-   * dedupliziert nach Slug, sortiert nach letzter Nutzung.
-   */
-  listSuggestions() {
+  async listSuggestions() {
+    if (this.isApi()) {
+      try { return await apiGet('/api/suggestions'); }
+      catch { return []; }
+    }
+    /* --- demo --- */
     const data = this._load();
     const lastUse = new Map();
     for (const week of Object.values(data.weeks)) {
@@ -197,23 +328,16 @@ const Storage = {
         if (!prev || iso > prev.iso) lastUse.set(s, { iso, name });
       }
     }
-
     const entries = [];
     for (const [slug, recipe] of Object.entries(data.recipes)) {
       const use = lastUse.get(slug);
-      entries.push({
-        slug,
-        title: recipe.title,
-        isRecipe: true,
-        lastIso: use ? use.iso : '',
-      });
+      entries.push({ slug, title: recipe.title, isRecipe: true, lastIso: use ? use.iso : '' });
     }
     const recipeSlugs = new Set(Object.keys(data.recipes));
     for (const [slug, use] of lastUse.entries()) {
       if (recipeSlugs.has(slug)) continue;
       entries.push({ slug, title: use.name, isRecipe: false, lastIso: use.iso });
     }
-
     entries.sort((a, b) => {
       if (a.lastIso && b.lastIso) return b.lastIso.localeCompare(a.lastIso);
       if (a.lastIso) return -1;
@@ -223,6 +347,20 @@ const Storage = {
     return entries;
   },
 };
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error('Bild konnte nicht gelesen werden'));
+    r.readAsDataURL(blob);
+  });
+}
+
+async function dataUrlToBlob(dataUrl) {
+  const res = await fetch(dataUrl);
+  return res.blob();
+}
 
 /* =============================================================
  *  Datums-Helfer (ISO-Wochen, Mo als Wochenstart)
@@ -344,7 +482,11 @@ function resizeImage(file, maxSize = 1200, quality = 0.85) {
         canvas.width = width;
         canvas.height = height;
         canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+        canvas.toBlob(
+          (blob) => blob ? resolve(blob) : reject(new Error('toBlob failed')),
+          'image/jpeg',
+          quality
+        );
       };
       img.onerror = () => reject(new Error('Bild konnte nicht gelesen werden'));
       img.src = e.target.result;
@@ -354,17 +496,48 @@ function resizeImage(file, maxSize = 1200, quality = 0.85) {
   });
 }
 
+function reloadAfter(promise) {
+  return promise.then(() => location.reload(), () => location.reload());
+}
+
+/* =============================================================
+ *  Auth-UI
+ * ============================================================= */
+const Auth = {
+  render() {
+    const el = document.getElementById('authStatus');
+    if (!el) return;
+    if (!Storage.serverAvailable) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    el.hidden = false;
+    if (Storage.isLoggedIn()) {
+      el.innerHTML = `<button type="button" class="auth-link" id="logoutBtn" title="${escapeHtml(Storage.email)}">Abmelden</button>`;
+      document.getElementById('logoutBtn').addEventListener('click', () => Auth.logout());
+    } else {
+      el.innerHTML = `<a href="/auth/google" class="auth-link">Anmelden</a>`;
+    }
+  },
+
+  async logout() {
+    try { await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' }); }
+    finally { location.reload(); }
+  },
+};
+
 /* =============================================================
  *  Board — Wochenansicht (Tafel)
  * ============================================================= */
 const Board = {
-  render() {
+  async render() {
     document.getElementById('weekLabel').textContent = Dates.formatWeekLabel(State.currentWeekKey);
 
     const todayWeek = Dates.weekKey(Dates.today());
     document.getElementById('todayBtn').classList.toggle('hidden', State.currentWeekKey === todayWeek);
 
-    const dayMap = Storage.loadWeek(State.currentWeekKey);
+    const dayMap = await Storage.loadWeek(State.currentWeekKey);
     const days = Dates.weekDays(State.currentWeekKey);
     const ol = document.getElementById('days');
     ol.innerHTML = '';
@@ -380,8 +553,8 @@ const Board = {
       const isToday = day.iso === State.todayIso;
       const dot = isToday ? '<span class="today-dot" aria-hidden="true"></span>' : '';
       const ariaLabel = dish
-        ? `${day.weekday}, ${dish} — bearbeiten`
-        : `${day.weekday}, leer — Gericht eintragen`;
+        ? (Storage.canEdit() ? `${day.weekday}, ${dish} — bearbeiten` : `${day.weekday}, ${dish}`)
+        : (Storage.canEdit() ? `${day.weekday}, leer — Gericht eintragen` : `${day.weekday}, leer`);
       li.setAttribute('aria-label', ariaLabel);
 
       li.innerHTML = `
@@ -431,9 +604,9 @@ const Recipes = {
     });
   },
 
-  renderList() {
+  async renderList() {
     const search = document.getElementById('recipeSearch').value.trim().toLowerCase();
-    const recipes = Storage.loadRecipes();
+    const recipes = await Storage.loadRecipes();
     const list = document.getElementById('recipeList');
     list.innerHTML = '';
 
@@ -447,7 +620,9 @@ const Recipes = {
       li.className = 'recipe-empty';
       li.textContent = search
         ? 'Keine Rezepte gefunden.'
-        : 'Noch keine Rezepte. Lege eines über „+ Neu" an oder beim Eintragen eines Gerichts auf der Tafel.';
+        : (Storage.canEdit()
+            ? 'Noch keine Rezepte. Lege eines über „+ Neu" an oder beim Eintragen eines Gerichts auf der Tafel.'
+            : 'Noch keine Rezepte vorhanden.');
       list.appendChild(li);
       return;
     }
@@ -470,18 +645,30 @@ const Recipes = {
     this.renderList();
   },
 
-  openDetail(slug) {
-    const recipe = Storage.getRecipe(slug);
+  async openDetail(slug) {
+    const recipe = await Storage.getRecipe(slug);
     if (!recipe) {
       location.hash = '#/rezepte';
       return;
     }
     this.currentSlug = slug;
-    document.getElementById('recipeTitle').value = recipe.title;
-    document.getElementById('recipeIngredients').value = recipe.ingredients || '';
-    document.getElementById('recipeSteps').value = recipe.steps || '';
-    document.getElementById('recipeNotes').value = recipe.notes || '';
-    this.renderImages();
+
+    const editable = Storage.canEdit();
+    const titleEl  = document.getElementById('recipeTitle');
+    const ingrEl   = document.getElementById('recipeIngredients');
+    const stepsEl  = document.getElementById('recipeSteps');
+    const notesEl  = document.getElementById('recipeNotes');
+
+    titleEl.value = recipe.title;
+    ingrEl.value  = recipe.ingredients || '';
+    stepsEl.value = recipe.steps || '';
+    notesEl.value = recipe.notes || '';
+
+    for (const el of [titleEl, ingrEl, stepsEl, notesEl]) {
+      el.readOnly = !editable;
+    }
+
+    this.renderImages(recipe);
     requestAnimationFrame(() => this.fitTitleSize());
 
     const back = document.querySelector('.view-recipe .back-link');
@@ -532,14 +719,15 @@ const Recipes = {
   },
 
   scheduleSave() {
+    if (!Storage.canEdit()) return;
     clearTimeout(this._saveTimer);
     this._saveTimer = setTimeout(() => this.saveCurrent(), 600);
   },
 
-  saveCurrent() {
+  async saveCurrent() {
     clearTimeout(this._saveTimer);
-    if (!this.currentSlug) return;
-    const old = Storage.getRecipe(this.currentSlug);
+    if (!Storage.canEdit() || !this.currentSlug) return;
+    const old = await Storage.getRecipe(this.currentSlug);
     if (!old) return;
 
     const titleEl = document.getElementById('recipeTitle');
@@ -556,10 +744,15 @@ const Recipes = {
       steps: document.getElementById('recipeSteps').value,
       notes: document.getElementById('recipeNotes').value,
     };
-    const result = Storage.saveRecipe(this.currentSlug, recipe);
+    const result = await Storage.saveRecipe(this.currentSlug, recipe);
     if (result.error === 'collision') {
       alert('Es gibt bereits ein Rezept mit diesem Titel.');
       titleEl.value = old.title;
+      return;
+    }
+    if (result.error === 'auth') {
+      alert('Sitzung abgelaufen. Bitte erneut anmelden.');
+      location.reload();
       return;
     }
     if (result.slug && result.slug !== this.currentSlug) {
@@ -568,65 +761,76 @@ const Recipes = {
     }
   },
 
-  newRecipe() {
+  async newRecipe() {
+    if (!Storage.canEdit()) return;
     const title = (prompt('Titel für neues Rezept') || '').trim();
     if (!title) return;
-    if (Storage.findRecipeByTitle(title)) {
+    if (await Storage.findRecipeByTitle(title)) {
       alert('Ein Rezept mit diesem Titel existiert bereits.');
       return;
     }
-    const result = Storage.saveRecipe(null, { title, ingredients: '', steps: '', notes: '' });
+    const result = await Storage.saveRecipe(null, { title, ingredients: '', steps: '', notes: '' });
+    if (result.error) {
+      alert(result.error === 'auth' ? 'Bitte anmelden.' : 'Konnte nicht angelegt werden.');
+      return;
+    }
     if (result.slug) location.hash = recipeHash(result.slug);
   },
 
-  deleteCurrent() {
-    if (!this.currentSlug) return;
-    const used = Storage.recipeUsageCount(this.currentSlug);
-    const recipe = Storage.getRecipe(this.currentSlug);
+  async deleteCurrent() {
+    if (!Storage.canEdit() || !this.currentSlug) return;
+    const used = await Storage.recipeUsageCount(this.currentSlug);
+    const recipe = await Storage.getRecipe(this.currentSlug);
     const name = recipe ? recipe.title : 'dieses Rezept';
     const msg = used > 0
       ? `„${name}" ist in ${used} Tag${used === 1 ? '' : 'en'} eingetragen. Trotzdem löschen?`
       : `„${name}" wirklich löschen?`;
     if (!confirm(msg)) return;
-    Storage.deleteRecipe(this.currentSlug);
+    await Storage.deleteRecipe(this.currentSlug);
     this.currentSlug = null;
     location.hash = '#/rezepte';
   },
 
-  renderImages() {
+  async renderImages(recipe) {
     const ul = document.getElementById('recipeImages');
     ul.innerHTML = '';
-    const recipe = this.currentSlug ? Storage.getRecipe(this.currentSlug) : null;
+    if (!recipe && this.currentSlug) recipe = await Storage.getRecipe(this.currentSlug);
     const images = (recipe && Array.isArray(recipe.images)) ? recipe.images : [];
+    const editable = Storage.canEdit();
 
     images.forEach((src, idx) => {
       const li = document.createElement('li');
       li.className = 'image-thumb';
 
       const img = document.createElement('img');
-      img.src = src;
+      img.src = imageSrc(src);
       img.alt = `Bild ${idx + 1}`;
-      img.addEventListener('click', () => this.openLightbox(src));
-
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'image-delete';
-      del.setAttribute('aria-label', 'Bild entfernen');
-      del.innerHTML = '&times;';
-      del.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (confirm('Bild entfernen?')) this.removeImage(idx);
-      });
+      img.addEventListener('click', () => this.openLightbox(imageSrc(src)));
 
       li.appendChild(img);
-      li.appendChild(del);
+
+      if (editable) {
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'image-delete';
+        del.setAttribute('aria-label', 'Bild entfernen');
+        del.innerHTML = '&times;';
+        del.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm('Bild entfernen?')) this.removeImage(idx);
+        });
+        li.appendChild(del);
+      }
+
       ul.appendChild(li);
     });
 
-    ul.appendChild(this._addTile('pick', 'Bild auswählen',
-      '<rect x="3" y="5" width="18" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8.5" cy="10" r="1.4" fill="currentColor"/><path d="M3.5 17l5-5 4 4 3-3 5 5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>'));
-    ul.appendChild(this._addTile('camera', 'Foto aufnehmen',
-      '<path d="M4 8h3.2l1.4-2h6.8l1.4 2H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="12" cy="13.5" r="3.4" fill="none" stroke="currentColor" stroke-width="1.4"/>'));
+    if (editable) {
+      ul.appendChild(this._addTile('pick', 'Bild auswählen',
+        '<rect x="3" y="5" width="18" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8.5" cy="10" r="1.4" fill="currentColor"/><path d="M3.5 17l5-5 4 4 3-3 5 5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>'));
+      ul.appendChild(this._addTile('camera', 'Foto aufnehmen',
+        '<path d="M4 8h3.2l1.4-2h6.8l1.4 2H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="12" cy="13.5" r="3.4" fill="none" stroke="currentColor" stroke-width="1.4"/>'));
+    }
   },
 
   _addTile(kind, label, svgInner) {
@@ -649,14 +853,23 @@ const Recipes = {
   },
 
   async handleImagePick(files, inputEl) {
-    if (!this.currentSlug || !files || files.length === 0) return;
+    if (!Storage.canEdit() || !this.currentSlug || !files || files.length === 0) return;
     for (const file of files) {
       if (!file.type.startsWith('image/')) continue;
       try {
-        const dataUrl = await resizeImage(file);
-        const result = Storage.addRecipeImage(this.currentSlug, dataUrl);
+        const blob = await resizeImage(file);
+        const result = await Storage.addRecipeImage(this.currentSlug, blob);
         if (result.error === 'quota') {
           alert('Speicher voll. Bitte ein anderes Bild entfernen, bevor neue hinzukommen.');
+          break;
+        }
+        if (result.error === 'auth') {
+          alert('Sitzung abgelaufen. Bitte erneut anmelden.');
+          location.reload();
+          return;
+        }
+        if (result.error) {
+          alert('Bild konnte nicht hochgeladen werden.');
           break;
         }
       } catch (err) {
@@ -668,9 +881,9 @@ const Recipes = {
     this.renderImages();
   },
 
-  removeImage(index) {
-    if (!this.currentSlug) return;
-    Storage.removeRecipeImage(this.currentSlug, index);
+  async removeImage(index) {
+    if (!Storage.canEdit() || !this.currentSlug) return;
+    await Storage.removeRecipeImage(this.currentSlug, index);
     this.renderImages();
   },
 
@@ -716,14 +929,16 @@ const Sheet = {
     });
   },
 
-  open(iso) {
+  async open(iso) {
+    if (!Storage.canEdit()) return;
     this.currentIso = iso;
     document.getElementById('sheetDay').textContent = Dates.formatDayLabel(iso);
-    const current = Storage.loadWeek(State.currentWeekKey)[iso] || '';
+    const week = await Storage.loadWeek(State.currentWeekKey);
+    const current = week[iso] || '';
     this.input.value = current;
     this.deleteBtn.classList.toggle('hidden', !current);
-    this.renderSuggestions();
-    this.renderAction();
+    await this.renderSuggestions();
+    await this.renderAction();
     this.dialog.showModal();
     setTimeout(() => this.input.focus(), 60);
   },
@@ -732,22 +947,22 @@ const Sheet = {
     if (this.dialog.open) this.dialog.close();
   },
 
-  save() {
-    Storage.setDish(State.currentWeekKey, this.currentIso, this.input.value);
+  async save() {
+    await Storage.setDish(State.currentWeekKey, this.currentIso, this.input.value);
     this.close();
     Board.render();
   },
 
-  removeEntry() {
-    Storage.removeDish(State.currentWeekKey, this.currentIso);
+  async removeEntry() {
+    await Storage.removeDish(State.currentWeekKey, this.currentIso);
     this.close();
     Board.render();
   },
 
-  renderAction() {
+  async renderAction() {
     const text = this.input.value.trim();
     if (!text) { this.action.innerHTML = ''; return; }
-    const recipe = Storage.findRecipeByTitle(text);
+    const recipe = await Storage.findRecipeByTitle(text);
     if (recipe) {
       this.action.innerHTML =
         `<button type="button" class="btn-link" data-action="open">→ Rezept öffnen</button>`;
@@ -757,16 +972,16 @@ const Sheet = {
     }
   },
 
-  handleAction(e) {
+  async handleAction(e) {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const text = this.input.value.trim();
     if (!text) return;
 
-    Storage.setDish(State.currentWeekKey, this.currentIso, text);
+    await Storage.setDish(State.currentWeekKey, this.currentIso, text);
 
     if (btn.dataset.action === 'create') {
-      const result = Storage.saveRecipe(null, { title: text, ingredients: '', steps: '', notes: '' });
+      const result = await Storage.saveRecipe(null, { title: text, ingredients: '', steps: '', notes: '' });
       if (result.error) return;
     }
 
@@ -776,8 +991,8 @@ const Sheet = {
     location.hash = recipeHash(slugify(text));
   },
 
-  renderSuggestions() {
-    const all = Storage.listSuggestions();
+  async renderSuggestions() {
+    const all = await Storage.listSuggestions();
     const q = this.input.value.trim().toLowerCase();
 
     const filtered = all
@@ -828,24 +1043,24 @@ const Router = {
     this.handle();
   },
 
-  handle() {
+  async handle() {
     const hash = location.hash || '#/';
 
     const m = hash.match(/^#\/rezept\/(.+)$/);
     if (m) {
       const slug = decodeURIComponent(m[1]);
-      Recipes.openDetail(slug);
       this.show('recipe');
+      await Recipes.openDetail(slug);
       return;
     }
     if (hash === '#/rezepte') {
-      Recipes.openList();
       this.show('recipes');
+      Recipes.openList();
       return;
     }
 
-    Board.render();
     this.show('board');
+    await Board.render();
   },
 
   show(name) {
@@ -857,7 +1072,7 @@ const Router = {
 };
 
 /* =============================================================
- *  Seed — Dummy-Daten beim ersten Start (localStorage leer)
+ *  Seed — Dummy-Daten beim ersten Start im Demo-Modus
  * ============================================================= */
 const Seed = {
   recipes: [
@@ -943,32 +1158,33 @@ const Seed = {
     'Burrata mit gerösteter Paprika und Basilikum',
   ],
 
-  runIfEmpty() {
+  async runIfEmpty() {
+    if (Storage.isApi()) return;
     const data = Storage._load();
     const fresh = !Object.keys(data.weeks).length && !Object.keys(data.recipes).length;
 
     if (fresh) {
       for (const r of this.recipes) {
-        Storage.saveRecipe(null, r);
+        await Storage.saveRecipe(null, r);
       }
-
       const wk = Dates.weekKey(Dates.today());
       const days = Dates.weekDays(wk);
       const dayMap = {};
       days.forEach((day, i) => { dayMap[day.iso] = this.weekTitles[i]; });
-      Storage.saveWeek(wk, dayMap);
+      await Storage.saveWeek(wk, dayMap);
     }
 
-    this.ensureImages();
+    await this.ensureImages();
   },
 
-  ensureImages() {
+  async ensureImages() {
+    if (Storage.isApi()) return;
     for (const r of this.recipes) {
       if (!r.image) continue;
-      const existing = Storage.findRecipeByTitle(r.title);
+      const existing = await Storage.findRecipeByTitle(r.title);
       if (!existing) continue;
       if (Array.isArray(existing.images) && existing.images.length > 0) continue;
-      Storage.addRecipeImage(existing.slug, r.image);
+      await Storage.addRecipeImage(existing.slug, r.image);
     }
   },
 };
@@ -976,16 +1192,23 @@ const Seed = {
 /* =============================================================
  *  Init
  * ============================================================= */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   State.todayIso       = Dates.isoDate(Dates.today());
   State.currentWeekKey = Dates.weekKey(Dates.today());
+
+  await Storage.init();
+  document.body.dataset.canEdit = Storage.canEdit() ? 'yes' : 'no';
+  document.body.dataset.mode    = Storage.mode;
 
   Storage.migrateImagePaths();
 
   const isLocal = ['localhost', '127.0.0.1', ''].includes(location.hostname);
   const wantsDemo = new URLSearchParams(location.search).has('demo');
-  if (isLocal || wantsDemo) Seed.runIfEmpty();
+  if (Storage.mode === 'demo' && (isLocal || wantsDemo)) {
+    await Seed.runIfEmpty();
+  }
 
+  Auth.render();
   Sheet.init();
   Recipes.initDetailListeners();
 
@@ -1002,19 +1225,32 @@ document.addEventListener('DOMContentLoaded', () => {
     Board.render();
   });
 
+  async function openDay(iso) {
+    if (Storage.canEdit()) {
+      Sheet.open(iso);
+      return;
+    }
+    const week = await Storage.loadWeek(State.currentWeekKey);
+    const dish = week[iso];
+    if (!dish) return;
+    const recipe = await Storage.findRecipeByTitle(dish);
+    if (recipe) {
+      Recipes.origin = 'board';
+      location.hash = recipeHash(recipe.slug);
+    }
+  }
+
   const daysEl = document.getElementById('days');
   daysEl.addEventListener('click', (e) => {
     const li = e.target.closest('.day');
-    if (li) Sheet.open(li.dataset.iso);
+    if (li) openDay(li.dataset.iso);
   });
   daysEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      const li = e.target.closest('.day');
-      if (li) {
-        e.preventDefault();
-        Sheet.open(li.dataset.iso);
-      }
-    }
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const li = e.target.closest('.day');
+    if (!li) return;
+    e.preventDefault();
+    openDay(li.dataset.iso);
   });
 
   Router.init();

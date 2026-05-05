@@ -173,10 +173,44 @@ body[data-section="recipe"]  .section-link[data-section="recipes"] {
   color: var(--c-ink);
   font-weight: 600;
 }
+.auth-status {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+}
+.auth-status[hidden] { display: none; }
+.auth-link {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--c-walnut);
+  text-decoration: none;
+  padding: var(--s-1) var(--s-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color var(--transition);
+}
+.auth-link:hover { color: var(--c-ink); }
 @media (min-width: 720px) {
   .section-nav { gap: var(--s-5); margin-bottom: var(--s-4); }
-  .section-link { font-size: 12px; }
+  .section-link, .auth-link { font-size: 12px; }
 }
+
+/* Read-only-Modus: alles, was Editieren erlaubt, ausblenden. */
+body[data-can-edit="no"] .recipe-new,
+body[data-can-edit="no"] .recipe-actions,
+body[data-can-edit="no"] .image-add,
+body[data-can-edit="no"] .image-delete { display: none !important; }
+
+body[data-can-edit="no"] .recipe-title,
+body[data-can-edit="no"] .field-input {
+  border-color: transparent;
+  background: transparent;
+}
+body[data-can-edit="no"] .recipe-title:focus,
+body[data-can-edit="no"] .field-input:focus { border-color: transparent; }
 
 /* ==============================================================
  * APP / VIEWS
