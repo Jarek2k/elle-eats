@@ -523,10 +523,26 @@ const Auth = {
         <button type="button" class="auth-btn is-active" id="logoutBtn" aria-label="Abmelden" title="Abmelden (${escapeHtml(Storage.email)})">
           ${icon}<span class="auth-dot" aria-hidden="true"></span>
         </button>`;
-      document.getElementById('logoutBtn').addEventListener('click', () => Auth.logout());
+      document.getElementById('logoutBtn').addEventListener('click', () => Auth.confirmLogout());
     } else {
       el.innerHTML = `<a href="/auth/google" class="auth-btn" aria-label="Anmelden" title="Anmelden">${icon}</a>`;
     }
+  },
+
+  confirmLogout() {
+    const dialog = document.getElementById('logoutConfirm');
+    if (!dialog) { Auth.logout(); return; }
+    const cancel = document.getElementById('logoutCancelBtn');
+    const confirm = document.getElementById('logoutConfirmBtn');
+    const onCancel = () => dialog.close();
+    const onConfirm = () => { dialog.close(); Auth.logout(); };
+    cancel.addEventListener('click', onCancel, { once: true });
+    confirm.addEventListener('click', onConfirm, { once: true });
+    dialog.addEventListener('close', () => {
+      cancel.removeEventListener('click', onCancel);
+      confirm.removeEventListener('click', onConfirm);
+    }, { once: true });
+    dialog.showModal();
   },
 
   async logout() {

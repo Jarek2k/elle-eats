@@ -927,3 +927,43 @@ dialog.lightbox::backdrop {
   z-index: 1;
 }
 .lightbox-close:hover { background: rgba(15, 17, 16, 0.9); }
+
+/* ==============================================================
+ * CONFIRM-DIALOG
+ * ============================================================== */
+dialog.confirm {
+  border: none;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  padding: var(--s-5);
+  border-radius: var(--radius);
+  width: min(420px, 92vw);
+  box-shadow: 0 10px 40px rgba(15, 17, 16, 0.25);
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  animation: sheet-in-desktop var(--transition);
+}
+dialog.confirm::backdrop {
+  background: rgba(15, 17, 16, 0.5);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: backdrop-in var(--transition);
+}
+.confirm-title {
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-size: 22px;
+  margin: 0 0 var(--s-2) 0;
+}
+.confirm-text {
+  margin: 0 0 var(--s-5) 0;
+  color: var(--c-walnut);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.confirm-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-4);
+}
