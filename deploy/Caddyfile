@@ -1,0 +1,8 @@
+elle-eats.de {
+	encode zstd gzip
+	reverse_proxy localhost:3000
+}
+
+www.elle-eats.de {
+	redir https://elle-eats.de{uri} permanent
+}

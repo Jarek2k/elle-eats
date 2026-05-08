@@ -48,7 +48,7 @@ Persönlicher Wochen-Speiseplan als Webseite. Sieben Tage, pro Tag ein Gericht, 
 ## Hosting
 
 - **GitHub Pages** (https://jarek2k.github.io/elle-eats/): Demo-Modus, statisches Frontend mit Seed-Daten. Auto-Deploy via [.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml) bei Push auf `main`.
-- **Hetzner-VPS** (geplant): produktiv mit Backend. Plan: Caddy als Reverse-Proxy + systemd-Service, kein Docker. Konfig kommt parallel zum Code unter `deploy/` (noch nicht angelegt).
+- **Hetzner-VPS** (Domain `elle-eats.de`): produktiv mit Backend. Caddy als Reverse-Proxy + systemd-Service, kein Docker. Konfig liegt unter [deploy/](deploy/) — Caddyfile + systemd-Unit sind committed, persönliche Setup-Notizen liegen lokal in `deploy/setup.md` (gitignored).
 - Nichts in den Code aufnehmen, das ein bestimmtes Hosting *fest* voraussetzt.
 
 ## Verzeichnisstruktur
@@ -75,6 +75,10 @@ elle-eats/
 │   │   ├── auth.js          # Google-OAuth + Session-Cookie
 │   │   └── seed.js          # Dev-Seed (npm run seed)
 │   └── data/                # gitignored: DB-Datei + Bilder
+├── deploy/                  # Hetzner-VPS-Konfig (Caddy + systemd)
+│   ├── Caddyfile
+│   ├── elle-eats.service
+│   └── setup.md             # Schritt-für-Schritt-Server-Setup (gitignored)
 └── docs/                    # Projekt-Referenzmaterial, nicht ausgeliefert
     ├── design/              # Styleguide & Designreferenzen
     │   ├── STYLEGUIDE.md

@@ -1,0 +1,27 @@
+[Unit]
+Description=elle-eats web server
+After=network.target
+
+[Service]
+Type=simple
+User=elle-eats
+Group=elle-eats
+WorkingDirectory=/srv/elle-eats/app/server
+EnvironmentFile=/srv/elle-eats/app/server/.env
+ExecStart=/usr/bin/node src/index.js
+Restart=on-failure
+RestartSec=3
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/elle-eats/app/server/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
