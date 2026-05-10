@@ -43,7 +43,7 @@ app.get('/auth/google/callback', async (c) => {
   deleteCookie(c, 'oauth_verifier', { path: '/' });
 
   if (!code || !state || !storedState || !storedVerifier || state !== storedState) {
-    return c.text('Ungültiger Auth-Status. Bitte erneut einloggen.', 400);
+    return c.redirect('/?auth_error=state');
   }
 
   let result;
@@ -51,11 +51,11 @@ app.get('/auth/google/callback', async (c) => {
     result = await auth.finishAuth(code, storedVerifier);
   } catch (err) {
     console.error('OAuth-Fehler:', err);
-    return c.text('Anmeldung fehlgeschlagen.', 400);
+    return c.redirect('/?auth_error=failed');
   }
 
   if (!result.email || !auth.isAllowed(result.email)) {
-    return c.text('Zugang nicht freigegeben.', 403);
+    return c.redirect('/?auth_error=not-allowed');
   }
 
   setCookie(c, auth.SESSION_COOKIE, auth.signSession(result.email), auth.cookieOptions);

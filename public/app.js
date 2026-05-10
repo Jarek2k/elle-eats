@@ -549,6 +549,34 @@ const Auth = {
     try { await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' }); }
     finally { location.reload(); }
   },
+
+  showAuthErrorFromUrl() {
+    const params = new URLSearchParams(location.search);
+    const code = params.get('auth_error');
+    if (!code) return;
+
+    params.delete('auth_error');
+    const cleaned = location.pathname + (params.toString() ? '?' + params.toString() : '') + location.hash;
+    history.replaceState(null, '', cleaned);
+
+    const dialog = document.getElementById('authErrorDialog');
+    if (!dialog) return;
+
+    const messages = {
+      'not-allowed': 'Diese E-Mail-Adresse ist nicht freigeschaltet.',
+      'state':       'Die Anmeldung ist abgelaufen. Bitte erneut versuchen.',
+      'failed':      'Die Anmeldung bei Google ist fehlgeschlagen. Bitte erneut versuchen.',
+    };
+    document.getElementById('authErrorText').textContent = messages[code] || 'Anmeldung fehlgeschlagen.';
+
+    const ok = document.getElementById('authErrorOkBtn');
+    const onOk = () => dialog.close();
+    ok.addEventListener('click', onOk, { once: true });
+    dialog.addEventListener('close', () => {
+      ok.removeEventListener('click', onOk);
+    }, { once: true });
+    dialog.showModal();
+  },
 };
 
 /* =============================================================
@@ -1254,6 +1282,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   Auth.render();
+  Auth.showAuthErrorFromUrl();
   Sheet.init();
   Recipes.initDetailListeners();
 
