@@ -314,6 +314,12 @@ main.app {
   .days { gap: var(--s-3); }
 }
 
+@media (min-height: 1000px) {
+  .view-board { justify-content: center; }
+  .canvas     { flex: 0 1 auto; }
+  .chalkboard { flex: 0 1 720px; }
+}
+
 .day {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
