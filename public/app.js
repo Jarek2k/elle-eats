@@ -6,6 +6,7 @@
  *  loadWeek/saveRecipe/etc. sind in beiden Modi async.
  * ============================================================= */
 const STORAGE_KEY = 'elle-eats:v1';
+const BULLET = '• ';
 
 function slugify(title) {
   return (title || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -627,6 +628,14 @@ const Recipes = {
   _saveTimer: null,
 
   initDetailListeners() {
+    // Bullet-Verhalten für Zutaten muss vor dem generischen Save-Handler laufen,
+    // damit der beim Blur normalisierte Wert gespeichert wird.
+    const ingrEl = document.getElementById('recipeIngredients');
+    ingrEl.addEventListener('focus', () => this.handleIngredientsFocus());
+    ingrEl.addEventListener('keydown', (e) => this.handleIngredientsKeydown(e));
+    ingrEl.addEventListener('blur', () => this.normalizeIngredientsField());
+    ingrEl.addEventListener('paste', (e) => this.handleIngredientsPaste(e));
+
     const ids = ['recipeTitle', 'recipeIngredients', 'recipeSteps', 'recipeNotes'];
     for (const id of ids) {
       const el = document.getElementById(id);
@@ -718,7 +727,7 @@ const Recipes = {
     const notesEl  = document.getElementById('recipeNotes');
 
     titleEl.value = recipe.title;
-    ingrEl.value  = recipe.ingredients || '';
+    ingrEl.value  = this.normalizeIngredientsText(recipe.ingredients || '');
     stepsEl.value = recipe.steps || '';
     notesEl.value = recipe.notes || '';
 
@@ -783,6 +792,83 @@ const Recipes = {
     if (!el) return;
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
+  },
+
+  normalizeIngredientsText(text) {
+    if (!text) return '';
+    return text.split('\n').map(line => {
+      if (line === '') return '';
+      if (line.startsWith(BULLET)) return line;
+      return BULLET + line.replace(/^[\s•\-–·*]+/, '');
+    }).join('\n');
+  },
+
+  normalizeIngredientsField() {
+    const el = document.getElementById('recipeIngredients');
+    if (!Storage.canEdit()) return;
+    const normalized = this.normalizeIngredientsText(el.value);
+    if (normalized !== el.value) {
+      el.value = normalized;
+      this.autosize(el);
+    }
+  },
+
+  handleIngredientsFocus() {
+    if (!Storage.canEdit()) return;
+    const el = document.getElementById('recipeIngredients');
+    if (el.value === '') {
+      el.value = BULLET;
+      el.selectionStart = el.selectionEnd = BULLET.length;
+    }
+  },
+
+  handleIngredientsKeydown(e) {
+    if (!Storage.canEdit()) return;
+    if (e.isComposing) return;
+    const el = e.currentTarget;
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const start = el.selectionStart;
+      const end   = el.selectionEnd;
+      const insert = '\n' + BULLET;
+      el.value = el.value.slice(0, start) + insert + el.value.slice(end);
+      el.selectionStart = el.selectionEnd = start + insert.length;
+      el.dispatchEvent(new Event('input'));
+    } else if (e.key === 'Backspace') {
+      const start = el.selectionStart;
+      const end   = el.selectionEnd;
+      if (start !== end) return;
+      const before = el.value.slice(0, start);
+      const lineStart = before.lastIndexOf('\n') + 1;
+      const linePrefix = before.slice(lineStart);
+      if (linePrefix === BULLET) {
+        e.preventDefault();
+        const removeFrom = lineStart === 0 ? 0 : lineStart - 1;
+        el.value = el.value.slice(0, removeFrom) + el.value.slice(start);
+        el.selectionStart = el.selectionEnd = removeFrom;
+        el.dispatchEvent(new Event('input'));
+      }
+    }
+  },
+
+  handleIngredientsPaste(e) {
+    if (!Storage.canEdit()) return;
+    const data = e.clipboardData && e.clipboardData.getData('text');
+    if (!data || !data.includes('\n')) return;
+    e.preventDefault();
+    const el = e.currentTarget;
+    const start = el.selectionStart;
+    const end   = el.selectionEnd;
+    const before = el.value.slice(0, start);
+    const after  = el.value.slice(end);
+    const lineStart = before.lastIndexOf('\n') + 1;
+    const linePrefix = before.slice(lineStart);
+    const atLineStart = linePrefix === '' || linePrefix === BULLET;
+    const normalized = this.normalizeIngredientsText(data);
+    const insert = atLineStart ? normalized : '\n' + normalized;
+    el.value = before + insert + after;
+    el.selectionStart = el.selectionEnd = (before + insert).length;
+    el.dispatchEvent(new Event('input'));
   },
 
   autosizeAll() {
